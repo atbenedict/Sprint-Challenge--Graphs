@@ -1,10 +1,10 @@
 from room import Room
 from player import Player
 from world import World
-
 from stack import Stack
 
-import multiprocessing
+import multiprocessing as mp
+import time
 
 import random
 
@@ -76,10 +76,10 @@ def explore(player, world, traversalPath,visited):
             pathBack.append(trackBackDir)
             player.travel(moveDir, False)
             traversalPath.append(moveDir)
-            # print(f"traversalPath from inside move loop: {traversalPath}")
+
         if len(unexploredDirections) == 0:
             if trackBackPaths.size()>0:
-                # print(f"going back. Size of path stack= {trackBackPaths.size()}")
+
                 pathBack = trackBackPaths.pop()
                 
                 while len(pathBack) >0:
@@ -87,70 +87,68 @@ def explore(player, world, traversalPath,visited):
                     del pathBack[-1]
                     player.travel(move, False)
                     traversalPath.append(move)
-                    # print(f"traversalPath from inside backtrack loop: {traversalPath}")
+
             else:
-                # print(f"this is returning from the else: {traversalPath}")
+
                 return traversalPath
-    # print(f"this is the traversalPath I am returning: {traversalPath}")
+
     return traversalPath
 
 
 
-def mainLoop(attempts, world):
+def mainLoop(numAttempts, world):
+
     bestPath = [None] * 100000
     traversalPath = []
-    for a in range(attempts):
-        print(f"attempt: {a+1}")
+    for a in range(numAttempts):
+        
+
+
         player = Player("Name", world.startingRoom)
         visited = set()
         trackBackPaths = Stack()
         traversalPath = []
         explore(player,world,traversalPath,visited)
-        print(f"rooms visited: {len(visited)}")
+
         if len(traversalPath) < len(bestPath):
             bestPath = traversalPath
-        # print(f"traversalPath from mainLoop: {traversalPath}")
-        # print(f"length: {len(traversalPath)}")
-        # print(f"bestPath from mainLoop: {bestPath}")
-        print(f"length: {len(bestPath)}")
+
     traversalPath = bestPath
-    # print(traversalPath)
     return traversalPath
-        
 
-# def multiP(procnum, return_dict):
-#     '''worker function'''
-#     print str(procnum) + ' represent!'
-#     return_dict[procnum] = procnum
+start_time = time.time()      
+numAttempts = 200000
+numProcesses = 20
+result_queue = mp.Queue()
+shortest = [0] * 10000
+results = []
+jobs = mp.Pool(processes=numProcesses)
+results = [jobs.apply_async(mainLoop,(numAttempts,world)) for i in range(numProcesses)]
+count = 0
+for res in results:
+    test = res.get()
+    if len(test) < len(shortest):
+        shortest = test
+        count = len(shortest)
+print(f"shortest path: {count}")
 
-# def runMultiP():
-#     manager = multiprocessing.Manager()
-#     return_dict = manager.dict()
-#     jobs = []
-#     for i in range(5):
-#         p = multiprocessing.Process(target=mainLoop, args=(i, return_dict))
-#         jobs.append(p)
-#         p.start()
+traversalPath = shortest
 
-#     for proc in jobs:
-#         proc.join()
-#     print return_dict.values()
-
-
-traversalPath = mainLoop(10, world)
 
 # TRAVERSAL TEST
 visited_rooms = set()
 player.currentRoom = world.startingRoom
 visited_rooms.add(player.currentRoom)
-# print(f"global traversalPath: {traversalPath}")
+
 for move in traversalPath:
     player.travel(move, False)
     visited_rooms.add(player.currentRoom)
 
+print(traversalPath)
+minutes, seconds = divmod(time.time()-start_time,60)
+print(f"number of walks: {len(results)*numAttempts} in {minutes:2.0f}:{seconds:2.4f} (mm:ss)")
 if len(visited_rooms) == len(roomGraph):
     print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
-    print(traversalPath)
 else:
     print("TESTS FAILED: INCOMPLETE TRAVERSAL")
     print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
@@ -168,8 +166,9 @@ else:
 #         print("I did not understand that command.")
 
 """
-967 Moves
-
-['s', 'w', 'e', 'n', 'n', 's', 'w', 'w', 's', 'w', 's', 's', 'n', 'n', 'e', 'n', 'e', 'n', 'w', 'w', 's', 'n', 'w', 's', 's', 's', 'w', 'w', 'w', 's', 'w', 'n', 's', 'e', 'n', 'e', 'e', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 's', 'e', 's', 'w', 'w', 'e', 's', 'w', 'e', 'n', 'e', 's', 's', 's', 's', 's', 's', 's', 's', 'w', 'e', 'n', 'e', 'e', 's', 's', 's', 'w', 'e', 'n', 'e', 'w', 'n', 'n', 'w', 's', 'n', 'w', 'n', 'n', 'n', 'w', 's', 's', 's', 'n', 'n', 'w', 's', 'w', 'e', 's', 'w', 'e', 'n', 'n', 'e', 'n', 'e', 'n', 'n', 'w', 's', 'w', 's', 'w', 's', 'n', 'e', 'n', 'w', 'w', 's', 'w', 'w', 'e', 'e', 's', 'w', 's', 's', 'w', 'e', 's', 's', 'n', 'w', 'w', 'e', 'e', 'n', 'n', 'w', 'e', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 'e', 's', 's', 's', 'e', 'w', 's', 'e', 'w', 'n', 'n', 'n', 'n', 'n', 'n', 'w', 'e', 'e', 'e', 'e', 'n', 'w', 'w', 'n', 's', 'w', 'w', 'w', 's', 'w', 's', 'n', 'e', 'n', 'e', 'e', 'n', 'w', 'w', 'n', 'w', 'e', 's', 'e', 'n', 'n', 'w', 'n', 'w', 'e', 'e', 'n', 'n', 's', 'w', 'w', 'e', 'n', 's', 'e', 'e', 'e', 'e', 'n', 'w', 'w', 'e', 'e', 'e', 's', 'n', 'n', 'w', 'w', 'w', 'n', 'w', 'w', 'w', 'e', 's', 'n', 'e', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 'n', 's', 's', 'e', 'n', 's', 's', 'w', 'e', 'e', 'e', 'e', 'n', 'w', 'n', 'w', 'e', 's', 'w', 'e', 'e', 's', 'e', 'n', 's', 'e', 'e', 'e', 'e', 'n', 'n', 'n', 's', 'w', 'w', 'w', 'w', 'w', 'n', 'w', 'w', 'w', 'e', 'e', 'n', 'w', 'w', 'w', 'w', 's', 'w', 'e', 'n', 'w', 'e', 'e', 'e', 'n', 'w', 'e', 'n', 'n', 's', 's', 's', 'e', 'n', 'n', 's', 's', 'e', 'n', 'n', 'n', 'n', 'n', 's', 's', 'w', 'e', 's', 's', 's', 's', 'e', 'n', 'n', 'n', 'n', 's', 's', 's', 's', 's', 'e', 'n', 's', 'e', 'n', 'n', 'w', 'n', 's', 'e', 's', 's', 'e', 'e', 'n', 'w', 'n', 's', 'e', 'n', 'n', 'w', 'n', 's', 'w', 'n', 'w', 'e', 's', 'e', 'e', 's', 's', 's', 'e', 'e', 's', 'n', 'n', 'n', 'w', 'n', 'n', 'w', 'n', 'e', 'w', 'w', 'e', 's', 'e', 's', 's', 'e', 'n', 'e', 'e', 'w', 'w', 'n', 'e', 'e', 'n', 's', 'e', 'n', 'e', 'n', 'e', 'e', 'e', 'w', 'n', 's', 'w', 'n', 's', 'w', 's', 'e', 'w', 'w', 'n', 'n', 'e', 'n', 'n', 's', 'e', 'n', 'n', 's', 'e', 's', 'n', 'e', 'w', 'w', 's', 'w', 's', 'w', 'n', 'n', 's', 's', 's', 'w', 'n', 'n', 'n', 'n', 'e', 'e', 'w', 'w', 's', 'w', 'n', 'w', 'w', 'e', 'e', 's', 'w', 's', 's', 's', 's', 'e', 'w', 'n', 'e', 'n', 'n', 's', 's', 'w', 'w', 'n', 'w', 'n', 's', 'e', 'n', 's', 's', 'w', 'w', 'n', 'n', 'n', 'n', 's', 's', 's', 'w', 'n', 'n', 'w', 'e', 's', 's', 'e', 's', 'w', 's', 'w', 'e', 'n', 'w', 'n', 's', 'w', 'n', 's', 'e', 'e', 'e', 'e', 'e', 'e', 'n', 'n', 'n', 'e', 'e', 's', 's', 's', 'e', 's', 's', 'e', 'w', 'w', 'w', 'w', 's', 's', 's', 's', 'w', 's', 'w', 'e', 's', 'e', 's', 'e', 'e', 's', 's', 's', 'n', 'n', 'e', 's', 'e', 'e', 'e', 'e', 'e', 'w', 'w', 'w', 's', 'e', 'e', 's', 'n', 'e', 'w', 'w', 'w', 's', 's', 's', 's', 'e', 'e', 'w', 'w', 'n', 'e', 'e', 'w', 'w', 'n', 'e', 'n', 's', 'e', 'w', 'w', 'n', 'n', 'n', 'w', 'w', 's', 'e', 'w', 'n', 'n', 'w', 'n', 'e', 'e', 'e', 's', 'e', 'e', 'e', 'e', 'w', 'n', 's', 'w', 'w', 'w', 'n', 'e', 'e', 'w', 'w', 'w', 's', 'n', 'w', 'n', 'e', 'n', 'e', 'n', 'n', 'e', 'n', 'n', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 's', 's', 'e', 'n', 'e', 'w', 's', 'w', 'w', 's', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'e', 'w', 'w', 's', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 'n', 'w', 's', 'n', 'w', 's', 'w', 's', 'e', 'e', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 'w', 'w', 'w', 's', 'w', 'w', 'n', 'e', 'n', 'e', 'n', 'e', 'n', 'n', 'n', 's', 'e', 'n', 'n', 'e', 'n', 's', 'e', 'e', 'n', 's', 'e', 'w', 'w', 'n', 's', 'w', 'w', 's', 's', 'w', 's', 's', 'w', 'n', 'n', 'n', 's', 's', 's', 's', 'w', 's', 'w', 'n', 'n', 'n', 'n', 's', 's', 'e', 'n', 'n', 's', 's', 'w', 's', 's', 's', 'w', 's', 'e', 'w', 's', 's', 's', 's', 's', 's', 's', 'n', 'e', 's', 's', 'w', 's', 's', 'n', 'n', 'e', 's', 's', 's', 'w', 's', 'n', 'e', 's', 's', 'n', 'n', 'n', 'n', 'e', 'e', 'e', 'n', 'e', 's', 's', 'n', 'n', 'e', 's', 's', 'e', 'w', 's', 's', 'n', 'n', 'n', 'n', 'e', 'w', 'w', 'w', 's', 'w', 'w', 's', 'e', 's', 's', 'n', 'n', 'e', 's', 's', 'n', 'n', 'w', 'w', 's', 's', 'n', 'n', 'n', 'w', 'n', 'n', 'n', 'w', 'n', 'n', 'n', 'e', 'e', 's', 's', 's', 's', 's', 'e', 'w', 'n', 'n', 'n', 'e', 's', 's', 'e', 'e', 'e', 'e', 'w', 'w', 'w', 'w', 'n', 'e', 'w', 'n', 'w', 'n', 'e', 'n', 'e', 's', 's', 'n', 'n', 'w', 's', 'w', 'n', 'w', 's', 's', 'n', 'n', 'w', 'n', 'w', 'w', 's', 'w', 'e', 's', 's', 'w', 'e', 's', 'w', 'e', 's', 'e', 'n', 'n', 'n', 'n', 's', 's', 's', 's', 's', 's', 's', 's', 's', 'n', 'n', 'n', 'n', 'n', 'w', 'w', 'w', 'n', 's', 'e', 's', 'e', 's', 's', 's', 'n', 'n', 'n', 'w', 'w', 's', 'n', 'e', 's', 'n', 'n', 'e', 'n', 'n', 'n', 'w', 'w', 's', 'n', 'e', 'e', 'n', 'n', 'w', 'e', 'e', 'e', 'n', 'e', 's', 'n', 'w', 'n', 'n', 'n', 'w', 'w', 'w', 'n', 's', 'w', 'n', 's']
+shortest path: 953
+['n', 's', 's', 'w', 'e', 'n', 'w', 'w', 's', 'w', 's', 's', 'n', 'n', 'e', 'n', 'e', 'n', 'w', 'w', 's', 'n', 'w', 's', 's', 's', 'w', 'w', 'w', 's', 'w', 'n', 's', 'e', 'n', 'e', 'e', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 's', 'e', 's', 'w', 's', 'w', 'e', 'n', 'w', 'e', 'e', 's', 's', 's', 's', 's', 's', 's', 'e', 's', 'n', 'e', 's', 's', 's', 'w', 'e', 'n', 'e', 'w', 'n', 'n', 'w', 'w', 's', 'w', 'e', 'n', 'n', 'n', 'n', 'w', 's', 's', 's', 'n', 'n', 'w', 's', 'w', 'e', 's', 'w', 'e', 'n', 'n', 'e', 'n', 'e', 'n', 'n', 'w', 's', 'w', 's', 'w', 's', 'n', 'e', 'n', 'w', 'w', 'w', 'e', 's', 'w', 'w', 'e', 'e', 's', 's', 's', 's', 's', 'e', 'w', 'n', 'e', 'w', 'n', 'n', 'n', 'w', 's', 'w', 'e', 's', 'w', 'e', 's', 'w', 'w', 'e', 'e', 's', 'n', 'n', 'n', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 'e', 'n', 'n', 'e', 'e', 'e', 'n', 'w', 'w', 'n', 's', 'w', 'w', 'w', 's', 'w', 's', 'n', 'e', 'n', 'e', 'e', 'n', 'w', 'w', 'n', 'w', 'e', 's', 'e', 'n', 'n', 'w', 'n', 'w', 'e', 'e', 'n', 'n', 's', 'w', 'n', 's', 'w', 'e', 'e', 'e', 'e', 'e', 'n', 'w', 'w', 'e', 'e', 'e', 's', 'n', 'n', 'w', 'w', 'w', 'w', 'e', 'n', 'n', 's', 'w', 'n', 'n', 's', 'w', 'w', 'w', 'e', 'e', 'e', 's', 'w', 's', 'n', 'w', 'e', 'e', 'e', 's', 'e', 'e', 'e', 'n', 'w', 'w', 'e', 'n', 'w', 'e', 's', 'e', 's', 'e', 'n', 's', 'e', 'n', 's', 'e', 'n', 's', 'e', 'e', 'n', 'n', 'w', 'w', 'w', 'n', 'n', 'w', 'n', 's', 'e', 's', 's', 'w', 'n', 's', 'w', 'n', 'w', 'n', 'w', 'n', 'n', 's', 's', 'w', 'n', 'n', 'n', 's', 's', 'w', 'e', 's', 'w', 'w', 'w', 'e', 's', 'w', 'e', 'n', 'e', 'e', 'e', 'e', 'n', 'n', 'n', 'n', 'n', 's', 's', 'w', 'e', 's', 's', 's', 's', 'w', 'w', 'e', 'e', 'e', 'n', 'n', 'n', 'n', 's', 's', 's', 's', 's', 'e', 'e', 'e', 'e', 'n', 'n', 'n', 'w', 'w', 'n', 'w', 'e', 's', 'e', 'n', 's', 'e', 's', 's', 'w', 'n', 's', 'e', 's', 'e', 'e', 's', 'n', 'n', 'n', 'n', 'e', 'e', 'w', 'w', 'n', 'n', 'n', 'w', 'n', 'n', 's', 'w', 'n', 's', 'e', 's', 'w', 'w', 'w', 's', 'w', 'e', 'n', 'w', 'n', 's', 'w', 'n', 's', 'e', 'e', 'e', 'n', 'n', 'n', 'n', 's', 's', 's', 'w', 'n', 'n', 'w', 'e', 's', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'n', 's', 's', 'w', 'n', 'n', 'n', 'e', 'n', 'w', 'w', 'e', 'e', 's', 'e', 'n', 'e', 'e', 'w', 'w', 's', 's', 's', 's', 'e', 's', 'e', 'n', 'e', 'n', 's', 'e', 'n', 's', 'e', 'w', 'w', 'w', 's', 'e', 'w', 'w', 's', 'w', 'w', 'e', 'n', 's', 'e', 'e', 'w', 'n', 'n', 'n', 'n', 'n', 's', 's', 'e', 'n', 'n', 's', 'e', 'n', 'e', 'e', 'w', 's', 'n', 'w', 'n', 's', 's', 'w', 's', 'w', 's', 'w', 'n', 'n', 'n', 'w', 'w', 's', 's', 's', 's', 'e', 'w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'w', 'e', 'e', 'w', 's', 'e', 's', 's', 'e', 's', 's', 'w', 'n', 's', 's', 'w', 'e', 's', 'e', 's', 's', 'e', 'w', 's', 'e', 's', 'n', 'w', 's', 'w', 's', 's', 's', 's', 's', 's', 's', 's', 's', 's', 'n', 'n', 'n', 'n', 'n', 'w', 'w', 'w', 'n', 's', 'e', 's', 'w', 's', 'n', 'e', 's', 'n', 'e', 's', 's', 's', 'n', 'n', 'n', 'w', 'n', 'e', 'n', 'w', 'e', 'n', 'n', 'w', 'w', 's', 'n', 'e', 'e', 'n', 'n', 'w', 'e', 's', 'w', 'e', 's', 's', 'w', 'e', 's', 's', 'e', 'n', 'n', 'n', 'n', 'n', 'e', 's', 'e', 's', 's', 'n', 'n', 'e', 's', 'e', 'n', 'e', 's', 's', 'n', 'n', 'w', 's', 'w', 's', 's', 's', 's', 'e', 'w', 'n', 'n', 'n', 'e', 's', 'e', 'w', 's', 'e', 'e', 'e', 'e', 'w', 'w', 'w', 'w', 'n', 'n', 'w', 'n', 'n', 'w', 'w', 's', 's', 's', 's', 'n', 'e', 's', 's', 's', 's', 's', 'w', 's', 'n', 'e', 's', 's', 'n', 'n', 'n', 'n', 'e', 'e', 'e', 'n', 'e', 'e', 's', 's', 's', 's', 'n', 'n', 'e', 'w', 'n', 'n', 'e', 'w', 'w', 's', 's', 'n', 'n', 'w', 's', 'w', 'w', 's', 's', 's', 'n', 'n', 'e', 'e', 's', 's', 'n', 'n', 'w', 's', 's', 'n', 'n', 'w', 'n', 'w', 'n', 'w', 's', 's', 'n', 'n', 'e', 'n', 'n', 'w', 'n', 'n', 'n', 'n', 'n', 'n', 'n', 'e', 'e', 's', 's', 's', 'n', 'n', 'e', 's', 's', 'e', 'w', 'n', 'e', 'e', 'e', 'e', 'e', 'w', 'w', 'w', 's', 's', 's', 's', 's', 'e', 'e', 'w', 'w', 'n', 'e', 'e', 'w', 'w', 'n', 'e', 'e', 'w', 'n', 's', 'w', 'n', 'n', 'e', 'e', 'e', 'w', 's', 'n', 'w', 'w', 'n', 'w', 'w', 'n', 'w', 'n', 'e', 'e', 's', 'n', 'e', 's', 'e', 'e', 'e', 'n', 's', 'e', 'w', 'w', 'w', 'w', 'n', 'e', 'e', 'w', 'w', 'w', 'w', 'n', 'e', 'n', 'e', 'n', 'n', 'e', 'n', 'n', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 's', 's', 'e', 'n', 'e', 'w', 's', 'w', 'w', 's', 'e', 's', 'n', 'e', 'e', 'e', 'w', 'n', 'e', 'w', 's', 'w', 's', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 'n', 'w', 'w', 's', 'w', 's', 'e', 'e', 'e', 'e', 'e', 's', 'n', 'w', 'w', 'w', 'w', 'w', 'w', 's', 'w', 'w', 'n', 'n', 'n', 'n', 'n', 's', 's', 'e', 'n', 'n', 's', 's', 'w', 's', 's', 'e', 'n', 'e', 'n', 'n', 'n', 'n', 's', 's', 's', 'e', 'n', 'n', 'e', 'n', 'n', 'e', 'n', 's', 'e', 'e', 'e', 'w', 'n', 's', 'w', 'n', 's', 'w', 'w', 's', 's', 'w', 'n', 's']
+number of walks: 4000000 in 83:52.7620 (mm:ss)
+TESTS PASSED: 953 moves, 500 rooms visited
 
 """
